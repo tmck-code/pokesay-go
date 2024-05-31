@@ -2,6 +2,7 @@ package pokesay
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -76,7 +77,19 @@ func fetchMetadataByName(names map[string][]int, nameToken string, metadataFiles
 		pokedex.MetadataFpath(metadataRootDir, nameChoice),
 	)
 	return metadata
+}
 
+func ChooseByIndex(idx int, entryIdx int, metadataFiles embed.FS, metadataRootDir string) (pokedex.PokemonMetadata, pokedex.PokemonEntryMapping, error) {
+	metadata := pokedex.ReadMetadataFromEmbedded(
+		metadataFiles,
+		pokedex.MetadataFpath(metadataRootDir, idx),
+	)
+	for _, entry := range metadata.Entries {
+		if entry.EntryIndex == entryIdx {
+			return metadata, entry, nil
+		}
+	}
+	return pokedex.PokemonMetadata{}, pokedex.PokemonEntryMapping{}, errors.New("could not find pokemon by index")
 }
 
 func ChooseByName(names map[string][]int, nameToken string, metadataFiles embed.FS, metadataRootDir string) (pokedex.PokemonMetadata, pokedex.PokemonEntryMapping) {

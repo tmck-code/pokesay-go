@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/tmck-code/pokesay/src/bin"
@@ -98,31 +99,53 @@ func main() {
 	fmt.Println("- Found", len(cowfileFpaths), "cowfiles")
 	// Read pokemon names
 	pokemonNames := pokedex.ReadNames(args.FromMetadataFname)
+	nameTokens := pokedex.GatherMapKeys(pokemonNames)
+	sort.Strings(nameTokens)
+	fmt.Println("names:", nameTokens)
+
 	fmt.Println("- Read", len(pokemonNames), "pokemon names from", args.FromMetadataFname)
-
-	fmt.Println("- Writing entries to file")
-	pbar := bin.NewProgressBar(len(cowfileFpaths))
-	for i, fpath := range cowfileFpaths {
-		data, err := os.ReadFile(fpath)
-		pokedex.Check(err)
-
-		pokedex.WriteBytesToFile(data, pokedex.EntryFpath(paths.EntryDirPath, i), true)
-		pbar.Add(1)
-	}
 
 	// 1. For each pokemon name, write a metadata file, containing the name information, and
 	// links to all of the matching cowfile indexes
 	fmt.Println("- Writing metadata to file")
 	pokemonMetadata := make([]pokedex.PokemonMetadata, 0)
 	uniqueNames := make(map[string][]int)
+	nameVariants := make(map[string][]string)
 	i := 0
-	pbar = bin.NewProgressBar(len(pokemonNames))
-	for key, name := range pokemonNames {
-		metadata := pokedex.CreateNameMetadata(i, key, name, args.FromDir, cowfileFpaths)
+	pbar := bin.NewProgressBar(len(pokemonNames))
+	for i, key := range nameTokens {
+		name := pokemonNames[key]
+		// add variant
+		metadata := pokedex.CreateNameMetadata(fmt.Sprintf("%04d", i), key, name, args.FromDir, cowfileFpaths)
 		pokedex.WriteStructToFile(metadata, pokedex.MetadataFpath(paths.MetadataDirPath, i))
 		pokemonMetadata = append(pokemonMetadata, *metadata)
 		uniqueNames[name.Slug] = append(uniqueNames[name.Slug], i)
 		i++
+		pbar.Add(1)
+	}
+
+	fmt.Println("- Writing entries to file")
+	pbar = bin.NewProgressBar(len(cowfileFpaths))
+	for i, fpath := range cowfileFpaths {
+		data, err := os.ReadFile(fpath)
+		pokedex.Check(err)
+		entryFpath := pokedex.EntryFpath(paths.EntryDirPath, i)
+		fmt.Println("writing", fpath, ">", entryFpath)
+
+		fpathParts := strings.Split(fpath, "/")
+		basename := fpathParts[len(fpathParts)-1]
+		name := strings.SplitN(strings.TrimSuffix(basename, ".cow"), "-", 2)[0]
+		fmt.Println("name", name)
+		for i, key := range nameTokens {
+			if name == key {
+				fmt.Println("found", name, key, i, pokemonNames[key], pokemonMetadata[i])
+				nameVariants[name] = append(nameVariants[name], basename)
+				fmt.Println("name ++", name, fmt.Sprintf("%04d.%04d", i, len(nameVariants[name])))
+				break
+			}
+		}
+
+		pokedex.WriteBytesToFile(data, entryFpath, true)
 		pbar.Add(1)
 	}
 

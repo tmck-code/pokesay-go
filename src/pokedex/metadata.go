@@ -13,13 +13,14 @@ type PokemonEntryMapping struct {
 }
 
 type PokemonMetadata struct {
+	Idx              string
 	Name             string
 	JapaneseName     string
 	JapanesePhonetic string
 	Entries          []PokemonEntryMapping
 }
 
-func NewMetadata(name string, japaneseName string, japanesePhonetic string, entryMap map[int][][]string) *PokemonMetadata {
+func NewMetadata(idx string, name string, japaneseName string, japanesePhonetic string, entryMap map[int][][]string) *PokemonMetadata {
 
 	entries := make([]PokemonEntryMapping, 0)
 
@@ -30,6 +31,7 @@ func NewMetadata(name string, japaneseName string, japanesePhonetic string, entr
 	}
 
 	return &PokemonMetadata{
+		Idx:              idx,
 		Name:             name,
 		JapaneseName:     japaneseName,
 		JapanesePhonetic: japanesePhonetic,
