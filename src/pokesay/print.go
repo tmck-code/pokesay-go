@@ -95,12 +95,40 @@ func DetermineBoxChars(unicodeBox bool) *BoxChars {
 // 2. The cowfile data is retrieved using the matching index, decompressed (un-gzipped),
 // 3. The pokemon is printed along with the name & category information
 func Print(args Args, choice int, names []string, categories []string, cows embed.FS) {
-	var b strings.Builder
+	var b1 strings.Builder
+	drawSpeechBubble(args.BoxChars, bufio.NewScanner(os.Stdin), args, &b1)
+	var b2 strings.Builder
+	drawPokemon(args, choice, names, categories, cows, &b2)
 
-	// pass the buffer to the functions
-	drawSpeechBubble(args.BoxChars, bufio.NewScanner(os.Stdin), args, &b)
-	drawPokemon(args, choice, names, categories, cows, &b)
-	fmt.Print(b.String())
+	s1, s2 := strings.Split(b1.String(), "\n"), strings.Split(b2.String(), "\n")
+	// fmt.Println(b2.String(), len(s2))
+	// fmt.Println(b1.String(), len(s1))
+	// print side-by-side
+	j := 0
+	for i := 0; i < len(s1) || i < len(s2); i++ {
+		if i < len(s1) {
+			if i == len(s1)-4 {
+				fmt.Print(s1[i] + "╱     ")
+			} else if i == len(s1)-5 {
+				fmt.Print(s1[i] + " ╱    ")
+			} else if i == len(s1)-6 {
+				fmt.Print(s1[i] + "  ╱   ")
+			} else if i == len(s1)-7 {
+				fmt.Print(s1[i] + "   ╱  ")
+			} else if i == len(s1)-8 {
+				fmt.Print(s1[i] + "    ╱ ")
+			} else if i == len(s1)-9 {
+				fmt.Print(s1[i] + "     ╱")
+			} else {
+				fmt.Print(s1[i] + "      ")
+			}
+		}
+		if i >= len(s1)-len(s2) && j < len(s2) {
+			fmt.Print("   " + s2[j])
+			j++
+		}
+		fmt.Println()
+	}
 }
 
 // Prints text from STDIN, surrounded by a speech bubble.
@@ -131,9 +159,11 @@ func drawSpeechBubble(boxChars *BoxChars, scanner *bufio.Scanner, args Args, b *
 		}
 	}
 
-	bottomBorder := strings.Repeat(boxChars.HorizontalEdge, 6) +
-		boxChars.BalloonTether +
-		strings.Repeat(boxChars.HorizontalEdge, args.Width+2-7)
+	// bottomBorder := strings.Repeat(boxChars.HorizontalEdge, 6) +
+	// 	boxChars.BalloonTether +
+	// 	strings.Repeat(boxChars.HorizontalEdge, args.Width+2-7)
+
+	bottomBorder := strings.Repeat(boxChars.HorizontalEdge, args.Width+2)
 
 	if args.DrawBubble {
 		// fmt.Fprintf(b, "%s%s%s\n", boxChars.BottomLeftCorner, bottomBorder, boxChars.BottomRightCorner)
@@ -142,10 +172,10 @@ func drawSpeechBubble(boxChars *BoxChars, scanner *bufio.Scanner, args Args, b *
 		// fmt.Fprintf(b, " %s \n", bottomBorder)
 		b.WriteString(" " + bottomBorder + " \n")
 	}
-	for i := 0; i < 4; i++ {
-		// fmt.Fprintf(b, "%s%s\n", strings.Repeat(" ", i+8), boxChars.BalloonString)
-		b.WriteString(strings.Repeat(" ", i+8) + boxChars.BalloonString + "\n")
-	}
+	// for i := 0; i < 4; i++ {
+	// 	// fmt.Fprintf(b, "%s%s\n", strings.Repeat(" ", i+8), boxChars.BalloonString)
+	// 	b.WriteString(strings.Repeat(" ", i+8) + boxChars.BalloonString + "\n")
+	// }
 }
 
 // Prints a single speech bubble line
